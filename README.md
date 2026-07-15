@@ -1,12 +1,20 @@
 # 🧾 ProsDevis
 
-> Application web PHP/MySQL de création de devis **et factures** professionnels — design épuré, multi-utilisateur, PDF Dompdf, dashboard analytique, **signature électronique client**, conformité RGPD & préparation Factur-X.
+> Application web PHP/MySQL de création de devis **et factures** professionnels — design épuré, multi-utilisateur, PDF Dompdf, dashboard analytique, signature électronique client, Factur-X, **blog SEO intégré** et conformité RGPD.
 
 ![PHP](https://img.shields.io/badge/PHP-8.2-blue) ![MySQL](https://img.shields.io/badge/MySQL-8.0-orange) ![Dompdf](https://img.shields.io/badge/Dompdf-3.x-teal) ![Chart.js](https://img.shields.io/badge/Chart.js-4.4-orange) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
 ## ✨ Fonctionnalités
+
+### 🌍 Blog & SEO
+- Blog public indexable avec listing et pages article dédiées
+- Administration back-office des articles : brouillon / publication
+- Champs SEO : `meta_title`, `meta_desc`, `og_image`, `canonical`
+- Génération de `sitemap.xml`
+- Open Graph / Twitter card pour partage social
+- Maillage interne via articles liés
 
 ### 🔐 Authentification & Sécurité
 - Système de login avancé (JWT + sessions sécurisées)
@@ -47,25 +55,14 @@
 - Liste avec filtres, solde dû, échéances en retard
 - Fiche facture : aperçu HTML, barre de progression d'encaissement
 - Paiement total ou partiel avec recalcul automatique du solde
-- Relances email sur factures en retard
+- Relances email sur factures en retard, manuelles ou automatiques (cron)
+- Génération XML **Factur-X / EN16931** téléchargeable
 - **Génération PDF** (Dompdf) : template A4, suivi paiement, mentions légales art. L.441-10
 
 ### 💼 Gestion des Clients & Entreprises
 - Annuaire clients avec historique
 - Gestion multi-entreprise (logo, couleurs, SIRET, RCS)
 - Templating par entreprise
-
-### 💰 Fiscalité
-- Gestion TVA multi-pays (FR 20%, DE 19%, etc.)
-- Remises globales et par ligne
-- Acomptes et conditions de paiement
-- Échéances et suivi du solde restant dû
-
-### 🌐 Landing & Marketing
-- Landing page publique avec pricing
-- Blog intégré (SEO)
-- Open Graph pour partage réseau social
-- Responsive mobile (artisans sur chantier)
 
 ---
 
@@ -76,68 +73,36 @@ prosdevis/
 ├── public/
 ├── app/
 │   ├── Controllers/
+│   │   ├── BlogController.php
 │   │   ├── DashboardController.php
 │   │   ├── QuoteController.php
 │   │   ├── QuotePdfController.php
 │   │   ├── InvoiceController.php
 │   │   ├── InvoicePdfController.php
-│   │   └── SignatureController.php
-│   ├── Models/
-│   │   ├── Dashboard.php
-│   │   ├── Quote.php
-│   │   ├── Invoice.php
-│   │   └── Signature.php
+│   │   ├── SignatureController.php
+│   │   └── FacturXController.php
+│   ├── Services/
+│   │   ├── ReminderMailer.php
+│   │   └── FacturX.php
 │   ├── Views/
+│   │   ├── blog/
 │   │   ├── dashboard/
 │   │   ├── quotes/
 │   │   ├── invoices/
 │   │   ├── signatures/
 │   │   └── layouts/
-│   │       ├── app.php
-│   │       └── public.php
+│   ├── routes_blog.php
 │   ├── routes_dashboard.php
 │   ├── routes_quotes.php
 │   ├── routes_invoices.php
-│   └── routes_signatures.php
+│   ├── routes_signatures.php
+│   └── routes_facturx.php
 ├── database/
 ├── storage/
+├── tests/
 ├── vendor/
 └── README.md
 ```
-
----
-
-## 🚀 Installation
-
-### Prérequis
-- PHP 8.2+
-- MySQL 8.0+
-- Composer
-- Serveur Apache/Nginx avec mod_rewrite
-- Fonction `mail()` configurée ou SMTP relay côté serveur
-
-### Étapes
-
-```bash
-git clone https://github.com/Sazar/prosdevis.git
-cd prosdevis
-composer install
-bash composer_require_dompdf.sh
-cp .env.example .env
-mysql -u root -p < database/schema.sql
-```
-
----
-
-## 🛡️ Sécurité
-
-- Mots de passe hashés avec `password_hash()` (bcrypt)
-- Tokens CSRF sur chaque formulaire
-- Requêtes préparées PDO uniquement
-- Rate limiting sur le login
-- Headers HTTP sécurisés via `.htaccess`
-- Génération PDF sans ressources distantes (`isRemoteEnabled: false`)
-- Signature électronique tracée : horodatage, IP, user-agent, payload JSON
 
 ---
 
@@ -154,13 +119,14 @@ mysql -u root -p < database/schema.sql
 - [x] **PDF Factures** — template A4, suivi encaissement, mentions légales art. L.441-10
 - [x] **Dashboard analytique** — 6 KPIs, CA mensuel Chart.js, donut devis, activité, top clients
 - [x] **Signature électronique** — lien public, canvas HTML5, acceptation/refus, preuve stockée
+- [x] **Relances automatiques** — cron, escalade 3 niveaux, historique
+- [x] **Factur-X / EN 16931** — XML téléchargeable et régénérable
+- [x] **Blog & SEO** — blog public, admin, metadata, Open Graph, sitemap XML
 
 ### 🔜 À venir
-- [ ] **Rappels automatiques planifiés** — cron job, relances progressives
-- [ ] **Format Factur-X** — obligation France 2026, XML embarqué dans le PDF
-- [ ] **Blog & SEO** — contenu marketing, Open Graph
 - [ ] **Export comptable** — CSV, FEC, synchronisation outils tiers
 - [ ] **SMTP / Email provider** — fiabilisation envoi emails (Mailgun, Postmark, Brevo)
+- [ ] **RBAC avancé** — permissions fines par module
 
 ---
 
