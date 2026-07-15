@@ -1,8 +1,8 @@
 # 🧾 ProsDevis
 
-> Application web PHP/MySQL de création de devis **et factures** professionnels — design épuré, multi-utilisateur, PDF Dompdf, conformité RGPD & préparation Factur-X.
+> Application web PHP/MySQL de création de devis **et factures** professionnels — design épuré, multi-utilisateur, PDF Dompdf, dashboard analytique, conformité RGPD & préparation Factur-X.
 
-![PHP](https://img.shields.io/badge/PHP-8.2-blue) ![MySQL](https://img.shields.io/badge/MySQL-8.0-orange) ![Dompdf](https://img.shields.io/badge/Dompdf-3.x-teal) ![License](https://img.shields.io/badge/license-MIT-green)
+![PHP](https://img.shields.io/badge/PHP-8.2-blue) ![MySQL](https://img.shields.io/badge/MySQL-8.0-orange) ![Dompdf](https://img.shields.io/badge/Dompdf-3.x-teal) ![Chart.js](https://img.shields.io/badge/Chart.js-4.4-orange) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -16,6 +16,14 @@
 - Protection CSRF, XSS, injection SQL
 - Conformité RGPD (consentement, droit à l'oubli, export)
 
+### 📊 Dashboard Analytique
+- 6 KPIs temps réel : CA facturé, CA encaissé, solde dû, devis en attente, factures en retard, taux de conversion
+- Graphique CA mensuel 6 mois (barres + courbe, Chart.js)
+- Donut répartition des statuts devis
+- Fil d'activité récente (12 derniers événements)
+- Top 5 clients par CA avec barres de progression
+- Responsive mobile, dark mode natif
+
 ### 📄 Gestion des Devis
 - Numérotation séquentielle non modifiable (ex: DEV-2026-0001)
 - Création/édition avec calcul temps réel, drag & drop, catalogue produits
@@ -27,11 +35,11 @@
 ### 🧾 Gestion des Factures
 - Numérotation séquentielle non modifiable (ex: FAC-2026-0001)
 - Génération depuis un devis accepté ou création directe
-- Liste des factures : filtres statut/recherche, solde dû, échéances en retard
+- Liste avec filtres, solde dû, échéances en retard
 - Fiche facture : aperçu HTML, barre de progression d'encaissement
 - Paiement total ou partiel avec recalcul automatique du solde
 - Relances email sur factures en retard
-- **Génération PDF** (Dompdf) : template dédié avec suivi paiement, mentions légales (art. L.441-10)
+- **Génération PDF** (Dompdf) : template A4, suivi paiement, mentions légales art. L.441-10
 
 ### 💼 Gestion des Clients & Entreprises
 - Annuaire clients avec historique
@@ -47,11 +55,6 @@
 ### ✍️ Signature Électronique *(à venir)*
 - Solution intégrée (checkbox + email de confirmation)
 - Compatible HelloSign / DocuSign API
-
-### 📊 Dashboard *(à venir)*
-- CA en cours, devis en attente, taux de conversion
-- Graphiques et statistiques
-- Dark mode
 
 ### 🌐 Landing & Marketing
 - Landing page publique avec pricing
@@ -74,14 +77,18 @@ prosdevis/
 │       └── img/
 ├── app/
 │   ├── Controllers/
+│   │   ├── DashboardController.php
 │   │   ├── QuoteController.php
 │   │   ├── QuotePdfController.php
 │   │   ├── InvoiceController.php
 │   │   └── InvoicePdfController.php
 │   ├── Models/
+│   │   ├── Dashboard.php
 │   │   ├── Quote.php
 │   │   └── Invoice.php
 │   ├── Views/
+│   │   ├── dashboard/
+│   │   │   └── index.php
 │   │   ├── quotes/
 │   │   │   ├── index.php
 │   │   │   ├── form.php
@@ -93,6 +100,7 @@ prosdevis/
 │   │       └── pdf_template.php
 │   ├── Middleware/
 │   ├── Helpers/
+│   ├── routes_dashboard.php
 │   ├── routes_quotes.php
 │   └── routes_invoices.php
 ├── config/
@@ -155,7 +163,7 @@ mysql -u root -p prosdevis < database/seeds/demo.sql
 - Requêtes préparées PDO uniquement
 - Rate limiting sur le login
 - Headers HTTP sécurisés via `.htaccess`
-- Génération PDF sans ressources distantes activées (Dompdf `isRemoteEnabled: false`)
+- Génération PDF sans ressources distantes (`isRemoteEnabled: false`)
 
 ---
 
@@ -169,15 +177,15 @@ mysql -u root -p prosdevis < database/seeds/demo.sql
 - [x] Aperçu devis (statuts, timeline, envoi email, conversion en facture)
 - [x] **PDF Devis** — Dompdf, template A4, inline + téléchargement
 - [x] Module **Factures** — liste, fiche détail, paiement partiel/total, relance email
-- [x] **PDF Factures** — template A4 dédié, suivi encaissement, mentions légales art. L.441-10
+- [x] **PDF Factures** — template A4, suivi encaissement, mentions légales art. L.441-10
+- [x] **Dashboard analytique** — 6 KPIs, CA mensuel Chart.js, donut devis, activité, top clients
 
 ### 🔜 À venir
-- [ ] **Dashboard** — CA, taux de conversion, graphiques, KPIs
 - [ ] **Signature électronique** — intégrée + HelloSign/DocuSign
 - [ ] **Rappels automatiques planifiés** — cron job, relances progressives
 - [ ] **Format Factur-X** — obligation France 2026, XML embarqué dans le PDF
 - [ ] **Blog & SEO** — contenu marketing, Open Graph
-- [ ] **Export comptable** — CSV, FEC, synchronisation avec des outils tiers
+- [ ] **Export comptable** — CSV, FEC, synchronisation outils tiers
 
 ---
 

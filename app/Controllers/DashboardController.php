@@ -3,7 +3,7 @@
 namespace App\Controllers;
 
 use App\Helpers\Auth;
-use App\Helpers\Database;
+use App\Models\Dashboard;
 
 class DashboardController
 {
@@ -11,48 +11,20 @@ class DashboardController
     {
         Auth::require();
         $companyId = Auth::companyId();
+        $user      = Auth::user();
 
-        // Stats devis
-        $stats = Database::query(
-            "SELECT
-                COUNT(*) AS total_quotes,
-                SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) AS drafts,
-                SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) AS sent,
-                SUM(CASE WHEN status = 'accepted' THEN 1 ELSE 0 END) AS accepted,
-                SUM(CASE WHEN status = 'refused' THEN 1 ELSE 0 END) AS refused,
-                SUM(CASE WHEN status = 'accepted' THEN total_ttc ELSE 0 END) AS revenue_quotes
-             FROM quotes
-             WHERE company_id = ? AND YEAR(issue_date) = YEAR(CURDATE())",
-            [$companyId]
-        )->fetch();
+        $kpis       = Dashboard::kpis($companyId);
+        $caMensuel  = Dashboard::caMensuel($companyId, 6);
+        $statutsDevis  = Dashboard::statutsDevis($companyId);
+        $activite   = Dashboard::activiteRecente($companyId, 12);
+        $topClients = Dashboard::topClients($companyId, 5);
 
-        // Stats factures
-        $invoiceStats = Database::query(
-            "SELECT
-                SUM(CASE WHEN status = 'paid' THEN total_ttc ELSE 0 END) AS revenue_paid,
-                SUM(CASE WHEN status IN ('sent','partial','overdue') THEN (total_ttc - amount_paid) ELSE 0 END) AS revenue_pending,
-                COUNT(CASE WHEN status = 'overdue' THEN 1 END) AS overdue_count
-             FROM invoices
-             WHERE company_id = ? AND YEAR(issue_date) = YEAR(CURDATE())",
-            [$companyId]
-        )->fetch();
+        $title = $pageTitle = 'Dashboard';
+        $activeNav = 'dashboard';
 
-        // Taux de conversion
-        $conversionRate = 0;
-        if ($stats['total_quotes'] > 0) {
-            $conversionRate = round(($stats['accepted'] / $stats['total_quotes']) * 100, 1);
-        }
-
-        // Derniers devis
-        $recentQuotes = Database::query(
-            'SELECT q.*, c.name AS client_name FROM quotes q
-             LEFT JOIN clients c ON c.id = q.client_id
-             WHERE q.company_id = ?
-             ORDER BY q.created_at DESC LIMIT 10',
-            [$companyId]
-        )->fetchAll();
-
-        $user = Auth::user();
+        ob_start();
         require __DIR__ . '/../Views/dashboard/index.php';
+        $content = ob_get_clean();
+        require __DIR__ . '/../Views/layouts/app.php';
     }
 }
