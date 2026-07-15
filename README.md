@@ -1,6 +1,6 @@
 # 🧾 ProsDevis
 
-> Application web PHP/MySQL de création de devis **et factures** professionnels — design épuré, multi-utilisateur, PDF Dompdf, dashboard analytique, conformité RGPD & préparation Factur-X.
+> Application web PHP/MySQL de création de devis **et factures** professionnels — design épuré, multi-utilisateur, PDF Dompdf, dashboard analytique, **signature électronique client**, conformité RGPD & préparation Factur-X.
 
 ![PHP](https://img.shields.io/badge/PHP-8.2-blue) ![MySQL](https://img.shields.io/badge/MySQL-8.0-orange) ![Dompdf](https://img.shields.io/badge/Dompdf-3.x-teal) ![Chart.js](https://img.shields.io/badge/Chart.js-4.4-orange) ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -15,6 +15,15 @@
 - Headers sécurisés (CSP, HSTS, X-Frame-Options)
 - Protection CSRF, XSS, injection SQL
 - Conformité RGPD (consentement, droit à l'oubli, export)
+
+### ✍️ Signature Électronique
+- Génération d’un lien public de signature par devis
+- Envoi email du lien de validation client
+- Signature manuscrite sur canvas HTML5
+- Consentement explicite avant validation
+- Acceptation automatique du devis après signature
+- Refus possible avec motif, journalisé dans `activity_logs`
+- Horodatage, IP et user-agent conservés dans la preuve de signature
 
 ### 📊 Dashboard Analytique
 - 6 KPIs temps réel : CA facturé, CA encaissé, solde dû, devis en attente, factures en retard, taux de conversion
@@ -52,10 +61,6 @@
 - Acomptes et conditions de paiement
 - Échéances et suivi du solde restant dû
 
-### ✍️ Signature Électronique *(à venir)*
-- Solution intégrée (checkbox + email de confirmation)
-- Compatible HelloSign / DocuSign API
-
 ### 🌐 Landing & Marketing
 - Landing page publique avec pricing
 - Blog intégré (SEO)
@@ -68,57 +73,35 @@
 
 ```
 prosdevis/
-├── public/                  # Racine web publique
-│   ├── index.php            # Landing page
-│   ├── login.php            # Page de connexion
-│   └── assets/
-│       ├── css/
-│       ├── js/
-│       └── img/
+├── public/
 ├── app/
 │   ├── Controllers/
 │   │   ├── DashboardController.php
 │   │   ├── QuoteController.php
 │   │   ├── QuotePdfController.php
 │   │   ├── InvoiceController.php
-│   │   └── InvoicePdfController.php
+│   │   ├── InvoicePdfController.php
+│   │   └── SignatureController.php
 │   ├── Models/
 │   │   ├── Dashboard.php
 │   │   ├── Quote.php
-│   │   └── Invoice.php
+│   │   ├── Invoice.php
+│   │   └── Signature.php
 │   ├── Views/
 │   │   ├── dashboard/
-│   │   │   └── index.php
 │   │   ├── quotes/
-│   │   │   ├── index.php
-│   │   │   ├── form.php
-│   │   │   ├── show.php
-│   │   │   └── pdf_template.php
-│   │   └── invoices/
-│   │       ├── index.php
-│   │       ├── show.php
-│   │       └── pdf_template.php
-│   ├── Middleware/
-│   ├── Helpers/
+│   │   ├── invoices/
+│   │   ├── signatures/
+│   │   └── layouts/
+│   │       ├── app.php
+│   │       └── public.php
 │   ├── routes_dashboard.php
 │   ├── routes_quotes.php
-│   └── routes_invoices.php
-├── config/
-│   ├── database.php
-│   ├── app.php
-│   └── mail.php
+│   ├── routes_invoices.php
+│   └── routes_signatures.php
 ├── database/
-│   ├── schema.sql           # Structure complète de la BDD
-│   └── seeds/               # Données de démonstration
 ├── storage/
-│   ├── pdfs/
-│   ├── logos/
-│   └── logs/
-├── vendor/                  # Dépendances Composer
-├── composer_require_dompdf.sh
-├── .env.example
-├── .htaccess
-├── composer.json
+├── vendor/
 └── README.md
 ```
 
@@ -131,27 +114,17 @@ prosdevis/
 - MySQL 8.0+
 - Composer
 - Serveur Apache/Nginx avec mod_rewrite
+- Fonction `mail()` configurée ou SMTP relay côté serveur
 
 ### Étapes
 
 ```bash
-# 1. Cloner le repo
 git clone https://github.com/Sazar/prosdevis.git
 cd prosdevis
-
-# 2. Installer les dépendances (dont Dompdf)
 composer install
 bash composer_require_dompdf.sh
-
-# 3. Configurer l'environnement
 cp .env.example .env
-# Éditer .env avec vos paramètres DB, mail, etc.
-
-# 4. Créer la base de données
 mysql -u root -p < database/schema.sql
-
-# 5. (Optionnel) Charger les données de démo
-mysql -u root -p prosdevis < database/seeds/demo.sql
 ```
 
 ---
@@ -164,6 +137,7 @@ mysql -u root -p prosdevis < database/seeds/demo.sql
 - Rate limiting sur le login
 - Headers HTTP sécurisés via `.htaccess`
 - Génération PDF sans ressources distantes (`isRemoteEnabled: false`)
+- Signature électronique tracée : horodatage, IP, user-agent, payload JSON
 
 ---
 
@@ -179,13 +153,14 @@ mysql -u root -p prosdevis < database/seeds/demo.sql
 - [x] Module **Factures** — liste, fiche détail, paiement partiel/total, relance email
 - [x] **PDF Factures** — template A4, suivi encaissement, mentions légales art. L.441-10
 - [x] **Dashboard analytique** — 6 KPIs, CA mensuel Chart.js, donut devis, activité, top clients
+- [x] **Signature électronique** — lien public, canvas HTML5, acceptation/refus, preuve stockée
 
 ### 🔜 À venir
-- [ ] **Signature électronique** — intégrée + HelloSign/DocuSign
 - [ ] **Rappels automatiques planifiés** — cron job, relances progressives
 - [ ] **Format Factur-X** — obligation France 2026, XML embarqué dans le PDF
 - [ ] **Blog & SEO** — contenu marketing, Open Graph
 - [ ] **Export comptable** — CSV, FEC, synchronisation outils tiers
+- [ ] **SMTP / Email provider** — fiabilisation envoi emails (Mailgun, Postmark, Brevo)
 
 ---
 
