@@ -1,6 +1,6 @@
 # 🧾 ProsDevis
 
-> Application web PHP/MySQL de création de devis professionnels — design épuré, multi-utilisateur, PDF, signature électronique, conformité RGPD & Factur-X.
+> Application web PHP/MySQL de création de devis **et factures** professionnels — design épuré, multi-utilisateur, PDF, conformité RGPD & préparation Factur-X.
 
 ![PHP](https://img.shields.io/badge/PHP-8.2-blue) ![MySQL](https://img.shields.io/badge/MySQL-8.0-orange) ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -18,12 +18,20 @@
 
 ### 📄 Gestion des Devis
 - Numérotation séquentielle non modifiable (ex: DEV-2026-0001)
-- Création de devis avec drag & drop des lignes
-- Autosave toutes les 30 secondes
-- Templates personnalisables (logo, couleurs, mentions)
+- Création/édition de devis avec calcul temps réel
+- Lignes drag & drop, catalogue produits, remises globales et par ligne
+- Aperçu détaillé du devis avec timeline de statuts
+- Envoi par email depuis l'interface
 - Transformation Devis → Facture en 1 clic
-- Génération PDF conforme (SIRET, TVA intracom, mentions légales)
-- Préparation format Factur-X (obligation France 2026)
+- Génération PDF Dompdf (inline ou téléchargement)
+
+### 🧾 Gestion des Factures
+- Numérotation séquentielle non modifiable (ex: FAC-2026-0001)
+- Génération depuis un devis accepté
+- Liste des factures avec filtres, solde dû et échéances en retard
+- Fiche facture avec aperçu, suivi d'encaissement et progression de paiement
+- Paiement total ou partiel avec recalcul automatique du solde
+- Envoi de relances email sur factures en retard
 
 ### 💼 Gestion des Clients & Entreprises
 - Annuaire clients avec historique
@@ -34,6 +42,7 @@
 - Gestion TVA multi-pays (FR 20%, DE 19%, etc.)
 - Remises globales et par ligne
 - Acomptes et conditions de paiement
+- Échéances et suivi du solde restant dû
 
 ### ✍️ Signature Électronique
 - Solution intégrée (checkbox + email de confirmation)
@@ -65,10 +74,19 @@ prosdevis/
 │   │   └── img/
 ├── app/
 │   ├── Controllers/
+│   │   ├── QuoteController.php
+│   │   ├── QuotePdfController.php
+│   │   └── InvoiceController.php
 │   ├── Models/
+│   │   ├── Quote.php
+│   │   └── Invoice.php
 │   ├── Views/
+│   │   ├── quotes/
+│   │   └── invoices/
 │   ├── Middleware/
-│   └── Helpers/
+│   ├── Helpers/
+│   ├── routes_quotes.php
+│   └── routes_invoices.php
 ├── config/
 │   ├── database.php
 │   ├── app.php
@@ -77,12 +95,13 @@ prosdevis/
 │   ├── schema.sql        # Structure complète de la BDD
 │   └── seeds/            # Données de démonstration
 ├── templates/
-│   └── devis/            # Templates PDF
+│   └── devis/            # Templates PDF historiques / custom
 ├── storage/
 │   ├── pdfs/
 │   ├── logos/
 │   └── logs/
 ├── vendor/               # Dépendances Composer
+├── composer_require_dompdf.sh
 ├── .env.example
 ├── .htaccess
 ├── composer.json
@@ -108,6 +127,7 @@ cd prosdevis
 
 # 2. Installer les dépendances
 composer install
+bash composer_require_dompdf.sh
 
 # 3. Configurer l'environnement
 cp .env.example .env
@@ -129,6 +149,7 @@ mysql -u root -p prosdevis < database/seeds/demo.sql
 - Requêtes préparées PDO uniquement
 - Rate limiting sur le login
 - Headers HTTP sécurisés via `.htaccess`
+- Génération PDF sans ressources distantes activées
 
 ---
 
@@ -138,12 +159,15 @@ mysql -u root -p prosdevis < database/seeds/demo.sql
 - [x] Schéma de base de données
 - [x] Système d'authentification
 - [x] Landing page
+- [x] Module devis (CRUD principal + PDF)
+- [x] Conversion devis → facture
+- [x] Module factures (liste, détail, paiement, relance)
 - [ ] Dashboard
-- [ ] Création de devis
-- [ ] Génération PDF
 - [ ] Signature électronique
 - [ ] Blog & SEO
 - [ ] Format Factur-X
+- [ ] PDF facture
+- [ ] Rappels automatiques planifiés
 
 ---
 
