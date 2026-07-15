@@ -1,6 +1,6 @@
 # 🧾 ProsDevis
 
-> Application web PHP/MySQL de création de devis **et factures** professionnels — design épuré, multi-utilisateur, PDF Dompdf, dashboard analytique, signature électronique client, Factur-X, **blog SEO intégré** et conformité RGPD.
+> Application web PHP/MySQL de création de devis **et factures** professionnels — design épuré, multi-utilisateur, PDF Dompdf, dashboard analytique, signature électronique client, Factur-X, blog SEO, **export comptable CSV/FEC** et **SMTP/provider email**.
 
 ![PHP](https://img.shields.io/badge/PHP-8.2-blue) ![MySQL](https://img.shields.io/badge/MySQL-8.0-orange) ![Dompdf](https://img.shields.io/badge/Dompdf-3.x-teal) ![Chart.js](https://img.shields.io/badge/Chart.js-4.4-orange) ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -8,13 +8,25 @@
 
 ## ✨ Fonctionnalités
 
-### 🌍 Blog & SEO
+### 📤 Export Comptable
+- **CSV** — tableau complet de toutes les factures sur période choisie, BOM UTF-8 pour Excel
+- **FEC NF Z55-200** — Fichier des Écritures Comptables conforme DGFiP (18 colonnes, délimiteur pipe, nommage `SIRETFECannée.txt`)
+- Sélecteur de période depuis l'interface back-office
+- Traçabilité dans `activity_logs`
+
+### 📧 Mailer multi-driver
+- **SMTP natif** — connexion socket PHP, STARTTLS, AUTH LOGIN, multipart HTML+texte
+- **Brevo (ex-Sendinblue)** — API REST v3
+- **Mailgun** — API REST, régions EU/US
+- **Fallback `mail()`** — sans configuration
+- Driver sélectionnable via `.env` (`MAIL_DRIVER=smtp|brevo|mailgun|mail`)
+
+### 🌐 Blog & SEO
 - Blog public indexable avec listing et pages article dédiées
 - Administration back-office des articles : brouillon / publication
 - Champs SEO : `meta_title`, `meta_desc`, `og_image`, `canonical`
 - Génération de `sitemap.xml`
 - Open Graph / Twitter card pour partage social
-- Maillage interne via articles liés
 
 ### 🔐 Authentification & Sécurité
 - Système de login avancé (JWT + sessions sécurisées)
@@ -25,44 +37,21 @@
 - Conformité RGPD (consentement, droit à l'oubli, export)
 
 ### ✍️ Signature Électronique
-- Génération d’un lien public de signature par devis
-- Envoi email du lien de validation client
+- Génération d'un lien public de signature par devis
 - Signature manuscrite sur canvas HTML5
-- Consentement explicite avant validation
-- Acceptation automatique du devis après signature
-- Refus possible avec motif, journalisé dans `activity_logs`
-- Horodatage, IP et user-agent conservés dans la preuve de signature
+- Acceptation/refus avec preuve stockée (horodatage, IP, user-agent)
 
 ### 📊 Dashboard Analytique
 - 6 KPIs temps réel : CA facturé, CA encaissé, solde dû, devis en attente, factures en retard, taux de conversion
-- Graphique CA mensuel 6 mois (barres + courbe, Chart.js)
-- Donut répartition des statuts devis
-- Fil d'activité récente (12 derniers événements)
-- Top 5 clients par CA avec barres de progression
-- Responsive mobile, dark mode natif
+- Graphique CA mensuel 6 mois (Chart.js), donut statuts, fil d'activité, top clients
 
 ### 📄 Gestion des Devis
-- Numérotation séquentielle non modifiable (ex: DEV-2026-0001)
-- Création/édition avec calcul temps réel, drag & drop, catalogue produits
-- Remises globales et par ligne, acomptes, conditions de paiement
-- Aperçu détaillé, envoi par email, timeline de statuts
-- Transformation Devis → Facture en 1 clic
-- **Génération PDF** (Dompdf) : inline navigateur ou téléchargement
+- Numérotation séquentielle (DEV-2026-0001), calcul temps réel, drag & drop, catalogue produits
+- PDF Dompdf, transformation Devis → Facture en 1 clic
 
 ### 🧾 Gestion des Factures
-- Numérotation séquentielle non modifiable (ex: FAC-2026-0001)
-- Génération depuis un devis accepté ou création directe
-- Liste avec filtres, solde dû, échéances en retard
-- Fiche facture : aperçu HTML, barre de progression d'encaissement
-- Paiement total ou partiel avec recalcul automatique du solde
-- Relances email sur factures en retard, manuelles ou automatiques (cron)
-- Génération XML **Factur-X / EN16931** téléchargeable
-- **Génération PDF** (Dompdf) : template A4, suivi paiement, mentions légales art. L.441-10
-
-### 💼 Gestion des Clients & Entreprises
-- Annuaire clients avec historique
-- Gestion multi-entreprise (logo, couleurs, SIRET, RCS)
-- Templating par entreprise
+- Numérotation séquentielle (FAC-2026-0001), paiement partiel/total
+- Relances auto (cron, 3 niveaux d'escalade), XML Factur-X/EN16931, PDF Dompdf
 
 ---
 
@@ -75,58 +64,93 @@ prosdevis/
 │   ├── Controllers/
 │   │   ├── BlogController.php
 │   │   ├── DashboardController.php
-│   │   ├── QuoteController.php
-│   │   ├── QuotePdfController.php
+│   │   ├── ExportController.php
+│   │   ├── FacturXController.php
 │   │   ├── InvoiceController.php
 │   │   ├── InvoicePdfController.php
-│   │   ├── SignatureController.php
-│   │   └── FacturXController.php
+│   │   ├── QuoteController.php
+│   │   ├── QuotePdfController.php
+│   │   ├── ReminderController.php
+│   │   └── SignatureController.php
 │   ├── Services/
-│   │   ├── ReminderMailer.php
-│   │   └── FacturX.php
+│   │   ├── AccountingExport.php
+│   │   ├── FacturX.php
+│   │   ├── Mailer.php
+│   │   └── ReminderMailer.php
 │   ├── Views/
 │   │   ├── blog/
 │   │   ├── dashboard/
-│   │   ├── quotes/
+│   │   ├── exports/
 │   │   ├── invoices/
+│   │   ├── quotes/
+│   │   ├── reminders/
 │   │   ├── signatures/
 │   │   └── layouts/
 │   ├── routes_blog.php
 │   ├── routes_dashboard.php
-│   ├── routes_quotes.php
+│   ├── routes_exports.php
+│   ├── routes_facturx.php
 │   ├── routes_invoices.php
-│   ├── routes_signatures.php
-│   └── routes_facturx.php
+│   ├── routes_quotes.php
+│   ├── routes_reminders.php
+│   └── routes_signatures.php
+├── bin/
+│   └── send_reminders.php
 ├── database/
+│   ├── schema.sql
+│   └── migrations/
 ├── storage/
 ├── tests/
-├── vendor/
+├── .env.example
 └── README.md
 ```
 
 ---
 
-## 📋 Roadmap
+## 🚀 Installation
 
-### ✅ Livré
+```bash
+git clone https://github.com/Sazar/prosdevis.git
+cd prosdevis
+composer install
+cp .env.example .env   # éditer les valeurs
+mysql -u root -p < database/schema.sql
+mysql -u root -p prosdevis < database/migrations/004_invoice_reminders.sql
+```
+
+### Cron relances
+```bash
+0 8 * * 1-5 php /var/www/prosdevis/bin/send_reminders.php >> /var/log/prosdevis_reminders.log 2>&1
+```
+
+---
+
+## 🛡️ Sécurité
+
+- Mots de passe hashés `bcrypt`, tokens CSRF, requêtes PDO préparées
+- Rate limiting login, headers HTTP sécurisés via `.htaccess`
+- Génération PDF sans ressources distantes
+- Signature électronique tracée : horodatage, IP, user-agent, payload JSON
+- Secrets dans `.env` (jamais en dur dans le code)
+
+---
+
+## 📋 Roadmap — ✅ Complet
+
 - [x] Structure du projet & schéma de base de données
-- [x] Système d'authentification (login, sessions, CSRF, rôles)
+- [x] Authentification (login, sessions, CSRF, rôles, 2FA)
 - [x] Landing page publique
-- [x] Module **Devis** — CRUD complet, calcul temps réel, drag & drop, catalogue produits
-- [x] Aperçu devis (statuts, timeline, envoi email, conversion en facture)
-- [x] **PDF Devis** — Dompdf, template A4, inline + téléchargement
-- [x] Module **Factures** — liste, fiche détail, paiement partiel/total, relance email
-- [x] **PDF Factures** — template A4, suivi encaissement, mentions légales art. L.441-10
-- [x] **Dashboard analytique** — 6 KPIs, CA mensuel Chart.js, donut devis, activité, top clients
-- [x] **Signature électronique** — lien public, canvas HTML5, acceptation/refus, preuve stockée
-- [x] **Relances automatiques** — cron, escalade 3 niveaux, historique
-- [x] **Factur-X / EN 16931** — XML téléchargeable et régénérable
-- [x] **Blog & SEO** — blog public, admin, metadata, Open Graph, sitemap XML
-
-### 🔜 À venir
-- [ ] **Export comptable** — CSV, FEC, synchronisation outils tiers
-- [ ] **SMTP / Email provider** — fiabilisation envoi emails (Mailgun, Postmark, Brevo)
-- [ ] **RBAC avancé** — permissions fines par module
+- [x] Module **Devis** — CRUD, calcul temps réel, drag & drop, catalogue
+- [x] PDF Devis — Dompdf, template A4
+- [x] Module **Factures** — liste, fiche, paiement partiel/total
+- [x] PDF Factures — template A4, mentions légales art. L.441-10
+- [x] **Dashboard analytique** — KPIs, CA Chart.js, activité, top clients
+- [x] **Signature électronique** — canvas HTML5, preuve stockée
+- [x] **Relances automatiques** — cron, 3 niveaux, historique
+- [x] **Factur-X / EN 16931** — XML téléchargeable
+- [x] **Blog & SEO** — public, admin, Open Graph, sitemap
+- [x] **Export comptable** — CSV Excel + FEC NF Z55-200
+- [x] **Mailer multi-driver** — SMTP, Brevo, Mailgun, fallback
 
 ---
 
