@@ -4,6 +4,7 @@
   display: flex;
   align-items: stretch;
   min-height: 100vh;
+  transition: background var(--transition);
 }
 
 .auth-container {
@@ -21,6 +22,8 @@
   max-width: 480px;
   width: 100%;
   margin: 0 auto;
+  background: var(--color-bg);
+  transition: background var(--transition);
 }
 
 .auth-header { text-align: center; margin-bottom: var(--space-8); }
@@ -49,9 +52,14 @@
   font-weight: 800;
   color: var(--color-text);
   margin-bottom: var(--space-2);
+  transition: color var(--transition);
 }
 
-.auth-subtitle { color: var(--color-text-muted); font-size: var(--text-sm); }
+.auth-subtitle {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  transition: color var(--transition);
+}
 
 .auth-form { display: flex; flex-direction: column; gap: var(--space-4); }
 
@@ -64,6 +72,7 @@
   transform: translateY(-50%);
   color: var(--color-text-light);
   pointer-events: none;
+  transition: color var(--transition);
 }
 
 .input-with-icon { padding-left: 2.5rem; }
@@ -78,6 +87,7 @@
   cursor: pointer;
   color: var(--color-text-light);
   padding: 0;
+  transition: color var(--transition-fast);
 }
 .toggle-password:hover { color: var(--color-text-muted); }
 
@@ -102,9 +112,10 @@
   margin-top: var(--space-6);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
+  transition: color var(--transition);
 }
 
-/* Visuel décoratif */
+/* ---- Visuel décoratif - inchangé en dark (gradient voulu) ---- */
 .auth-visual {
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
   display: flex;
@@ -176,8 +187,47 @@
   font-weight: 500;
 }
 
+/* ---- Dark mode — panneau formulaire ---- */
+[data-theme="dark"] .auth-card,
+[data-theme="dark"] .auth-body {
+  background: var(--color-bg);
+}
+
+/* Séparateur entre panneau form et panneau visuel en dark */
+[data-theme="dark"] .auth-container {
+  border: none;
+}
+
+/* Bouton toggle thème sur la page auth */
+.auth-theme-toggle {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-fast);
+  z-index: 10;
+}
+.auth-theme-toggle:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  box-shadow: var(--shadow-lg);
+}
+
 @media (max-width: 768px) {
   .auth-container { grid-template-columns: 1fr; }
   .auth-visual { display: none; }
-  .auth-card { padding: var(--space-8) var(--space-6); }
+  .auth-card {
+    padding: var(--space-8) var(--space-6);
+    max-width: 100%;
+  }
 }

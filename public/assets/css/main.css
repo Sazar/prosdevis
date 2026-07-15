@@ -28,6 +28,23 @@
   --color-danger:   #ef4444;
   --color-info:     #3b82f6;
 
+  /* Badges sémantiques - light */
+  --badge-draft-bg:     #f1f5f9; --badge-draft-text:     #64748b;
+  --badge-sent-bg:      #dbeafe; --badge-sent-text:      #1d4ed8;
+  --badge-accepted-bg:  #d1fae5; --badge-accepted-text:  #065f46;
+  --badge-refused-bg:   #fee2e2; --badge-refused-text:   #991b1b;
+  --badge-expired-bg:   #fef3c7; --badge-expired-text:   #92400e;
+  --badge-converted-bg: #ede9fe; --badge-converted-text: #5b21b6;
+  --badge-paid-bg:      #d1fae5; --badge-paid-text:      #065f46;
+  --badge-partial-bg:   #fef3c7; --badge-partial-text:   #92400e;
+  --badge-overdue-bg:   #fee2e2; --badge-overdue-text:   #991b1b;
+
+  /* Alertes - light */
+  --alert-error-bg:    #fee2e2; --alert-error-text:   #991b1b; --alert-error-border:   #ef4444;
+  --alert-success-bg:  #d1fae5; --alert-success-text: #065f46; --alert-success-border: #10b981;
+  --alert-info-bg:     #dbeafe; --alert-info-text:    #1d4ed8; --alert-info-border:    #3b82f6;
+  --alert-warning-bg:  #fef3c7; --alert-warning-text: #92400e; --alert-warning-border: #f59e0b;
+
   /* Typographie */
   --font-sans:  'Inter', system-ui, -apple-system, sans-serif;
   --font-mono:  'JetBrains Mono', 'Fira Code', monospace;
@@ -78,21 +95,50 @@
   --container-max: 1280px;
 }
 
-/* Dark mode */
+/* ==========================================
+   DARK MODE — variables sémantiques
+   ========================================== */
 [data-theme="dark"],
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    /* Surfaces */
     --color-bg:          #0f172a;
     --color-surface:     #1e293b;
     --color-surface-2:   #283548;
     --color-border:      #334155;
     --color-border-dark: #475569;
+
+    /* Textes */
     --color-text:        #f1f5f9;
     --color-text-muted:  #94a3b8;
     --color-text-light:  #64748b;
+
+    /* Ombres renforcées */
     --shadow-sm:  0 1px 2px 0 rgb(0 0 0 / 0.3);
     --shadow:     0 1px 3px 0 rgb(0 0 0 / 0.4);
     --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.4);
+    --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.5);
+    --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.5);
+
+    /* Badges - tons sombres */
+    --badge-draft-bg:     #1e293b; --badge-draft-text:     #94a3b8;
+    --badge-sent-bg:      #1e3a5f; --badge-sent-text:      #60a5fa;
+    --badge-accepted-bg:  #14532d; --badge-accepted-text:  #4ade80;
+    --badge-refused-bg:   #450a0a; --badge-refused-text:   #f87171;
+    --badge-expired-bg:   #451a03; --badge-expired-text:   #fbbf24;
+    --badge-converted-bg: #2e1065; --badge-converted-text: #c084fc;
+    --badge-paid-bg:      #14532d; --badge-paid-text:      #4ade80;
+    --badge-partial-bg:   #451a03; --badge-partial-text:   #fbbf24;
+    --badge-overdue-bg:   #450a0a; --badge-overdue-text:   #f87171;
+
+    /* Alertes - tons sombres */
+    --alert-error-bg:    #450a0a; --alert-error-text:   #fca5a5; --alert-error-border:   #ef4444;
+    --alert-success-bg:  #14532d; --alert-success-text: #86efac; --alert-success-border: #10b981;
+    --alert-info-bg:     #1e3a5f; --alert-info-text:    #93c5fd; --alert-info-border:    #3b82f6;
+    --alert-warning-bg:  #451a03; --alert-warning-text: #fcd34d; --alert-warning-border: #f59e0b;
+
+    /* Primary light devient sombre */
+    --color-primary-light: #1e3a5f;
   }
 }
 
@@ -207,7 +253,7 @@ label {
   background: var(--color-surface);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition);
   outline: none;
 }
 
@@ -221,6 +267,15 @@ label {
 .form-control.error { border-color: var(--color-danger); }
 .form-control.error:focus { box-shadow: 0 0 0 3px rgb(239 68 68 / 0.15); }
 
+/* Autofill dark mode */
+[data-theme="dark"] .form-control:-webkit-autofill,
+[data-theme="dark"] .form-control:-webkit-autofill:hover,
+[data-theme="dark"] .form-control:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--color-surface-2) inset;
+  -webkit-text-fill-color: var(--color-text);
+  caret-color: var(--color-text);
+}
+
 /* ---- Cards ---- */
 .card {
   background: var(--color-surface);
@@ -228,7 +283,7 @@ label {
   border-radius: var(--radius-xl);
   padding: var(--space-6);
   box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--transition);
+  transition: box-shadow var(--transition), background var(--transition), border-color var(--transition);
 }
 .card:hover { box-shadow: var(--shadow-md); }
 
@@ -241,7 +296,7 @@ label {
   border-bottom: 1px solid var(--color-border);
 }
 
-/* ---- Badges ---- */
+/* ---- Badges — 100% adaptatifs via variables ---- */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -251,15 +306,19 @@ label {
   border-radius: var(--radius-full);
   letter-spacing: 0.025em;
   text-transform: uppercase;
+  transition: background var(--transition), color var(--transition);
 }
-.badge-draft    { background: var(--color-surface-2); color: var(--color-text-muted); }
-.badge-sent     { background: #dbeafe; color: #1d4ed8; }
-.badge-accepted { background: #d1fae5; color: #065f46; }
-.badge-refused  { background: #fee2e2; color: #991b1b; }
-.badge-expired  { background: #fef3c7; color: #92400e; }
-.badge-converted{ background: #ede9fe; color: #5b21b6; }
+.badge-draft     { background: var(--badge-draft-bg);     color: var(--badge-draft-text); }
+.badge-sent      { background: var(--badge-sent-bg);      color: var(--badge-sent-text); }
+.badge-accepted  { background: var(--badge-accepted-bg);  color: var(--badge-accepted-text); }
+.badge-refused   { background: var(--badge-refused-bg);   color: var(--badge-refused-text); }
+.badge-expired   { background: var(--badge-expired-bg);   color: var(--badge-expired-text); }
+.badge-converted { background: var(--badge-converted-bg); color: var(--badge-converted-text); }
+.badge-paid      { background: var(--badge-paid-bg);      color: var(--badge-paid-text); }
+.badge-partial   { background: var(--badge-partial-bg);   color: var(--badge-partial-text); }
+.badge-overdue   { background: var(--badge-overdue-bg);   color: var(--badge-overdue-text); }
 
-/* ---- Alert ---- */
+/* ---- Alertes — 100% adaptatives ---- */
 .alert {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius);
@@ -268,10 +327,12 @@ label {
   align-items: flex-start;
   gap: var(--space-3);
   margin-bottom: var(--space-4);
+  transition: background var(--transition), color var(--transition);
 }
-.alert-error   { background: #fee2e2; color: #991b1b; border-left: 4px solid var(--color-danger); }
-.alert-success { background: #d1fae5; color: #065f46; border-left: 4px solid var(--color-success); }
-.alert-info    { background: #dbeafe; color: #1d4ed8; border-left: 4px solid var(--color-info); }
+.alert-error   { background: var(--alert-error-bg);   color: var(--alert-error-text);   border-left: 4px solid var(--alert-error-border); }
+.alert-success { background: var(--alert-success-bg); color: var(--alert-success-text); border-left: 4px solid var(--alert-success-border); }
+.alert-info    { background: var(--alert-info-bg);    color: var(--alert-info-text);    border-left: 4px solid var(--alert-info-border); }
+.alert-warning { background: var(--alert-warning-bg); color: var(--alert-warning-text); border-left: 4px solid var(--alert-warning-border); }
 
 /* ---- Layout App ---- */
 .app-layout {
@@ -293,6 +354,7 @@ label {
   position: sticky;
   top: 0;
   height: 100vh;
+  transition: background var(--transition), border-color var(--transition);
 }
 
 .sidebar-logo {
@@ -339,12 +401,14 @@ label {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
+  transition: background var(--transition), border-color var(--transition);
 }
 
 .main-content {
   padding: var(--space-8);
   overflow-y: auto;
   background: var(--color-bg);
+  transition: background var(--transition);
 }
 
 /* ---- Stat Cards ---- */
@@ -411,6 +475,7 @@ label {
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
+  transition: background var(--transition), border-color var(--transition);
 }
 
 table {
@@ -421,6 +486,7 @@ table {
 
 thead {
   background: var(--color-surface-2);
+  transition: background var(--transition);
 }
 
 th {
@@ -439,6 +505,7 @@ td {
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
   color: var(--color-text);
+  transition: background var(--transition);
 }
 
 tr:last-child td { border-bottom: none; }

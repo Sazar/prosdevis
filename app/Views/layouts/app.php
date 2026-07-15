@@ -2,7 +2,15 @@
 // Layout principal de l'application
 // Variables attendues: $title, $user, $activeNav
 $activeNav = $activeNav ?? '';
-$theme = $user['theme'] ?? 'auto';
+
+// Lecture du thème : priorité cookie > préférence user en BDD > 'auto'
+// Évite le FOUC (Flash Of Unstyled Content) en appliquant le bon data-theme dès le HTML
+$theme = 'auto';
+if (!empty($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'])) {
+    $theme = $_COOKIE['theme'];
+} elseif (!empty($user['theme']) && in_array($user['theme'], ['light', 'dark', 'auto'])) {
+    $theme = $user['theme'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr" data-theme="<?= htmlspecialchars($theme) ?>">
@@ -16,6 +24,16 @@ $theme = $user['theme'] ?? 'auto';
   <link rel="stylesheet" href="/assets/css/main.css">
   <link rel="stylesheet" href="/assets/css/app.css">
   <?= $extraHead ?? '' ?>
+  <script>
+    // Applique le thème AVANT le rendu pour éviter tout flash
+    (function(){
+      var cookie = document.cookie.match(/(?:^|;\s*)theme=([^;]*)/);
+      var saved  = cookie ? cookie[1] : null;
+      var system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      var theme  = (saved === 'light' || saved === 'dark') ? saved : system;
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 <body>
 
@@ -66,6 +84,22 @@ $theme = $user['theme'] ?? 'auto';
         </a>
       </div>
 
+      <div class="nav-section">
+        <span class="nav-section-label">Outils</span>
+        <a href="/reminders" class="nav-item <?= $activeNav === 'reminders' ? 'active' : '' ?>">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Relances
+        </a>
+        <a href="/exports" class="nav-item <?= $activeNav === 'exports' ? 'active' : '' ?>">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exports
+        </a>
+        <a href="/blog" class="nav-item <?= $activeNav === 'blog' ? 'active' : '' ?>">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Blog
+        </a>
+      </div>
+
       <?php if (\App\Helpers\Auth::isAdmin()): ?>
       <div class="nav-section">
         <span class="nav-section-label">Administration</span>
@@ -104,8 +138,11 @@ $theme = $user['theme'] ?? 'auto';
     </div>
     <div class="topbar-right">
       <!-- Bouton dark mode -->
-      <button class="topbar-icon-btn" data-theme-toggle aria-label="Basculer le thème">
-        <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <button class="topbar-icon-btn" id="themeToggleBtn" data-theme-toggle aria-label="Basculer le thème">
+        <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
       </button>
       <!-- Notifications -->
       <button class="topbar-icon-btn" aria-label="Notifications">
@@ -137,46 +174,66 @@ $theme = $user['theme'] ?? 'auto';
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <script>
-// Theme toggle
 (function(){
-  const html = document.documentElement;
-  const btn  = document.querySelector('[data-theme-toggle]');
-  let theme = html.getAttribute('data-theme') || 'auto';
-  if (theme === 'auto') {
-    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    html.setAttribute('data-theme', theme);
+  var html = document.documentElement;
+  var btn  = document.getElementById('themeToggleBtn');
+  var icon = document.getElementById('themeIcon');
+
+  function getTheme() {
+    var cookie = document.cookie.match(/(?:^|;\s*)theme=([^;]*)/);
+    if (cookie && (cookie[1] === 'light' || cookie[1] === 'dark')) return cookie[1];
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
-  function updateIcon(t) {
-    const icon = document.getElementById('themeIcon');
+
+  function setIcon(t) {
     if (!icon) return;
     icon.innerHTML = t === 'dark'
       ? '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>'
       : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+    btn && btn.setAttribute('aria-label', t === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre');
   }
-  updateIcon(theme);
-  btn && btn.addEventListener('click', () => {
-    theme = theme === 'dark' ? 'light' : 'dark';
-    html.setAttribute('data-theme', theme);
-    document.cookie = 'theme=' + theme + '; path=/; max-age=31536000';
-    updateIcon(theme);
+
+  var current = getTheme();
+  html.setAttribute('data-theme', current);
+  setIcon(current);
+
+  btn && btn.addEventListener('click', function(){
+    current = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', current);
+    document.cookie = 'theme=' + current + '; path=/; max-age=31536000; SameSite=Lax';
+    setIcon(current);
+
+    // Sync préférence en BDD en arrière-plan (fire & forget)
+    fetch('/settings/theme', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+      body: JSON.stringify({theme: current, _token: document.querySelector('meta[name=csrf-token]') ? document.querySelector('meta[name=csrf-token]').content : ''})
+    }).catch(function(){});
+  });
+
+  // Sidebar toggle mobile
+  var toggleBtn = document.getElementById('sidebarToggle');
+  var sidebar   = document.getElementById('sidebar');
+  var overlay   = document.getElementById('sidebarOverlay');
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+    toggleBtn && toggleBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  toggleBtn && toggleBtn.addEventListener('click', function(){
+    var isOpen = sidebar.classList.toggle('open');
+    overlay.classList.toggle('active', isOpen);
+    toggleBtn.setAttribute('aria-expanded', String(isOpen));
+  });
+  overlay && overlay.addEventListener('click', closeSidebar);
+
+  // Ferme sidebar au resize desktop
+  window.matchMedia('(min-width: 1025px)').addEventListener('change', function(e){
+    if (e.matches) closeSidebar();
   });
 })();
-
-// Sidebar toggle mobile
-const sidebarToggle = document.getElementById('sidebarToggle');
-const sidebar = document.getElementById('sidebar');
-const overlay = document.getElementById('sidebarOverlay');
-function closeSidebar() {
-  sidebar.classList.remove('open');
-  overlay.classList.remove('active');
-  sidebarToggle.setAttribute('aria-expanded', 'false');
-}
-sidebarToggle && sidebarToggle.addEventListener('click', () => {
-  const isOpen = sidebar.classList.toggle('open');
-  overlay.classList.toggle('active', isOpen);
-  sidebarToggle.setAttribute('aria-expanded', String(isOpen));
-});
-overlay && overlay.addEventListener('click', closeSidebar);
 </script>
 <?= $extraScripts ?? '' ?>
 </body>
