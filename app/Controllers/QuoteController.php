@@ -6,7 +6,6 @@ use App\Helpers\Auth;
 use App\Helpers\Session;
 use App\Helpers\Database;
 use App\Models\Quote;
-use App\Models\Client;
 
 class QuoteController
 {
@@ -24,8 +23,7 @@ class QuoteController
         $quotes = Quote::list($companyId, $filters, $page);
         $user   = Auth::user();
 
-        $title     = 'Devis';
-        $pageTitle = 'Mes devis';
+        $title = $pageTitle = 'Devis';
         $activeNav = 'quotes';
 
         ob_start();
@@ -44,8 +42,7 @@ class QuoteController
         $vatRates = Database::query("SELECT rate, label FROM vat_rates WHERE country='FR' AND is_active=1 ORDER BY rate DESC")->fetchAll();
         $user     = Auth::user();
 
-        $title     = 'Nouveau devis';
-        $pageTitle = 'Créer un devis';
+        $title = $pageTitle = 'Nouveau devis';
         $activeNav = 'quotes';
 
         ob_start();
@@ -57,16 +54,11 @@ class QuoteController
     public function store(): void
     {
         Auth::require();
-
-        if (!Session::verifyCsrf($_POST['csrf_token'] ?? '')) {
-            http_response_code(403);
-            die('CSRF error');
-        }
+        if (!Session::verifyCsrf($_POST['csrf_token'] ?? '')) { http_response_code(403); die('CSRF error'); }
 
         $companyId = Auth::companyId();
         $userId    = Auth::id();
 
-        // Validation
         $errors = $this->validateQuoteForm($_POST);
         if (!empty($errors)) {
             Session::flash('error', implode('<br>', $errors));
@@ -75,9 +67,8 @@ class QuoteController
         }
 
         try {
-            $number = Quote::generateNumber($companyId);
-            $lines  = $this->parseLines($_POST);
-
+            $number  = Quote::generateNumber($companyId);
+            $lines   = $this->parseLines($_POST);
             $quoteId = Quote::create([
                 'company_id'    => $companyId,
                 'created_by'    => $userId,
@@ -98,7 +89,6 @@ class QuoteController
                 'status'        => isset($_POST['send_now']) ? 'sent' : 'draft',
             ], $lines);
 
-            // Log
             Database::query('INSERT INTO activity_logs (user_id,company_id,action,entity_type,entity_id) VALUES (?,?,?,?,?)',
                 [$userId, $companyId, 'quote.create', 'quote', $quoteId]);
 
@@ -143,7 +133,6 @@ class QuoteController
         $quote     = Quote::findById($id, $companyId);
 
         if (!$quote || in_array($quote['status'], ['converted', 'refused'])) {
-            http_response_code(403);
             Session::flash('error', 'Ce devis ne peut plus être modifié.');
             header('Location: /quotes/' . $id);
             exit;
@@ -154,8 +143,7 @@ class QuoteController
         $vatRates = Database::query("SELECT rate, label FROM vat_rates WHERE country='FR' AND is_active=1 ORDER BY rate DESC")->fetchAll();
         $user     = Auth::user();
 
-        $title     = 'Modifier ' . $quote['number'];
-        $pageTitle = 'Modifier le devis';
+        $title = $pageTitle = 'Modifier ' . $quote['number'];
         $activeNav = 'quotes';
 
         ob_start();
@@ -202,16 +190,119 @@ class QuoteController
             header('Location: /quotes/' . $id);
             exit;
         } catch (\Throwable $e) {
-            Session::flash('error', 'Erreur: ' . $e->getMessage());
+            Session::flash('error', 'Erreur : ' . $e->getMessage());
             header('Location: /quotes/' . $id . '/edit');
             exit;
         }
     }
 
+    public function updateStatus(int $id): void
+    {
+        Auth::require();
+        if (!Session::verifyCsrf($_POST['csrf_token'] ?? '')) { http_response_code(403); exit; }
+
+        $companyId = Auth::companyId();
+        $allowed   = ['sent','viewed','accepted','refused','expired'];
+        $newStatus = $_POST['status'] ?? '';
+
+        if (!in_array($newStatus, $allowed)) {
+            Session::flash('error', 'Statut invalide.');
+            header('Location: /quotes/' . $id);
+            exit;
+        }
+
+        Database::query(
+            'UPDATE quotes SET status=? WHERE id=? AND company_id=?',
+            [$newStatus, $id, $companyId]
+        );
+
+        Database::query('INSERT INTO activity_logs (user_id,company_id,action,entity_type,entity_id,meta) VALUES (?,?,?,?,?,?)',
+            [Auth::id(), $companyId, 'quote.status_change', 'quote', $id, json_encode(['status'=>$newStatus])]);
+
+        Session::flash('success', 'Statut mis à jour.');
+        header('Location: /quotes/' . $id);
+        exit;
+    }
+
+    public function sendEmail(int $id): void
+    {
+        Auth::require();
+        if (!Session::verifyCsrf($_POST['csrf_token'] ?? '')) { http_response_code(403); exit; }
+
+        $companyId = Auth::companyId();
+        $quote     = Quote::findById($id, $companyId);
+        if (!$quote) { http_response_code(404); exit; }
+
+        $to      = filter_var($_POST['to'] ?? '', FILTER_VALIDATE_EMAIL);
+        $subject = strip_tags($_POST['subject'] ?? 'Devis');
+        $message = strip_tags($_POST['message'] ?? '');
+
+        if (!$to) {
+            Session::flash('error', 'Adresse email invalide.');
+            header('Location: /quotes/' . $id);
+            exit;
+        }
+
+        // Email via mail() natif — à remplacer par PHPMailer/SMTP en production
+        $headers  = 'From: ' . ($quote['company_email'] ?? 'noreply@prosdevis.fr') . "\r\n";
+        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        $sent = mail($to, $subject, $message, $headers);
+
+        if ($sent) {
+            // Marquer le devis comme envoyé
+            Database::query('UPDATE quotes SET status="sent" WHERE id=? AND company_id=? AND status="draft"', [$id, $companyId]);
+            Database::query('INSERT INTO activity_logs (user_id,company_id,action,entity_type,entity_id,meta) VALUES (?,?,?,?,?,?)',
+                [Auth::id(), $companyId, 'quote.sent', 'quote', $id, json_encode(['to'=>$to])]);
+            Session::flash('success', 'Email envoyé à ' . $to . '.');
+        } else {
+            Session::flash('error', 'Échec de l\'envoi. Vérifiez la configuration email du serveur.');
+        }
+
+        header('Location: /quotes/' . $id);
+        exit;
+    }
+
+    public function duplicate(int $id): void
+    {
+        Auth::require();
+        $companyId = Auth::companyId();
+        $quote     = Quote::findById($id, $companyId);
+        if (!$quote) { http_response_code(404); exit; }
+
+        try {
+            $number  = Quote::generateNumber($companyId);
+            $newId   = Quote::create([
+                'company_id'    => $companyId,
+                'created_by'    => Auth::id(),
+                'client_id'     => $quote['client_id'],
+                'number'        => $number,
+                'title'         => '[Copie] ' . $quote['title'],
+                'description'   => $quote['description'],
+                'issue_date'    => date('Y-m-d'),
+                'validity_date' => date('Y-m-d', strtotime('+30 days')),
+                'currency'      => $quote['currency'],
+                'country_vat'   => $quote['country_vat'],
+                'discount_type' => $quote['discount_type'],
+                'discount_value'=> $quote['discount_value'],
+                'deposit_percent'=>$quote['deposit_percent'],
+                'notes'         => $quote['notes'],
+                'internal_notes'=> $quote['internal_notes'],
+                'payment_terms' => $quote['payment_terms'],
+                'status'        => 'draft',
+            ], $quote['lines']);
+
+            Session::flash('success', 'Devis dupliqué : ' . $number);
+            header('Location: /quotes/' . $newId . '/edit');
+        } catch (\Throwable $e) {
+            Session::flash('error', 'Erreur lors de la duplication.');
+            header('Location: /quotes/' . $id);
+        }
+        exit;
+    }
+
     public function convertToInvoice(int $id): void
     {
         Auth::require();
-        Auth::requireRole('admin', 'collaborator');
         if (!Session::verifyCsrf($_POST['csrf_token'] ?? '')) { http_response_code(403); exit; }
 
         $companyId = Auth::companyId();
@@ -231,10 +322,10 @@ class QuoteController
     private function validateQuoteForm(array $post): array
     {
         $errors = [];
-        if (empty($post['client_id'])) $errors[] = 'Client obligatoire.';
-        if (empty($post['title']))     $errors[] = 'Titre obligatoire.';
-        if (empty($post['validity_date'])) $errors[] = 'Date de validité obligatoire.';
-        if (empty($post['lines']['name'][0])) $errors[] = 'Au moins une ligne de prestation est requise.';
+        if (empty($post['client_id']))         $errors[] = 'Client obligatoire.';
+        if (empty($post['title']))             $errors[] = 'Titre obligatoire.';
+        if (empty($post['validity_date']))     $errors[] = 'Date de validité obligatoire.';
+        if (empty($post['lines']['name'][0])) $errors[] = 'Au moins une ligne est requise.';
         return $errors;
     }
 
