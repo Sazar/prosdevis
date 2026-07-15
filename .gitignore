@@ -1,0 +1,25 @@
+# Environnement
+.env
+
+# Dépendances
+vendor/
+node_modules/
+
+# Storage
+storage/pdfs/
+storage/logos/
+storage/logs/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache
+*.cache
+*.tmp
