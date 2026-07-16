@@ -1,0 +1,12 @@
+# ProsDevis - routage pour DocumentRoot public/
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Si le fichier ou le dossier existe, on le sert tel quel
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Sinon, on passe tout à public/index.php (front controller)
+    RewriteRule ^ index.php [L]
+</IfModule>
